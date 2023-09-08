@@ -17,7 +17,6 @@ var _ filterableVoiceName = languageCode("")
 var _ filterableVoiceName = SSMGender("")
 
 func LanguageCode(v string) languageCode { return languageCode(v) }
-func Gender(v SSMGender) SSMGender       { return SSMGender(v) }
 
 func (l languageCode) Pass(voice *texttospeech.Voice) bool {
 	if l == "_" {

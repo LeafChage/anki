@@ -4,6 +4,7 @@ import (
 	"anki/google"
 	"anki/google/google_tts"
 	"context"
+	"errors"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -13,6 +14,8 @@ import (
 type speakCommandOption struct {
 	languageCode string
 	text         string
+	gender       string
+	voice        string
 }
 
 var (
@@ -27,13 +30,19 @@ var (
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if speakCmdOpt.voice != "NULL" && speakCmdOpt.gender != "NULL" {
+				return errors.New("don't specify both gender and voice")
+			}
 			return speakFn(credentialFilePath, speakCmdOpt)
 		},
 	}
 )
 
 func init() {
-	speakCmd.Flags().StringVar(&speakCmdOpt.languageCode, "lang", "ja-JP", "output sound speaked person in this language")
+	speakCmd.Flags().StringVar(&speakCmdOpt.languageCode, "lang", "", "speaker speaks in this language")
+	speakCmd.Flags().StringVar(&speakCmdOpt.gender, "gender", "NULL", "speaker is this gender")
+	speakCmd.Flags().StringVar(&speakCmdOpt.voice, "voice", "NULL", "speaker is this")
+	speakCmd.MarkFlagRequired("lang")
 }
 
 func speakFn(credential string, option speakCommandOption) error {
@@ -48,11 +57,18 @@ func speakFn(credential string, option speakCommandOption) error {
 		return err
 	}
 
-	err = client.Synthesize(
-		ctx,
-		google_tts.SynthesisText(option.text),
-		google_tts.SynthesisLanguageCode(option.languageCode),
-	)
+	options := []google_tts.SynthesizeOptions{google_tts.SynthesisText(speakCmdOpt.text)}
+	if speakCmdOpt.voice != "NULL" {
+		options = append(options, google_tts.SynthesisVoiceName(speakCmdOpt.voice))
+	}
+	if speakCmdOpt.gender != "NULL" {
+		options = append(options, google_tts.SSMGender(speakCmdOpt.gender))
+	}
+	if speakCmdOpt.languageCode != "NULL" {
+		options = append(options, google_tts.SynthesisLanguageCode(speakCmdOpt.languageCode))
+	}
+
+	err = client.Synthesize(ctx, options...)
 	if err != nil {
 		return err
 	}

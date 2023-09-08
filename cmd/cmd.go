@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"os"
+	"path"
+
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +16,11 @@ var (
 )
 
 func Execute() error {
-	rootCmd.PersistentFlags().StringVarP(&credentialFilePath, "file", "f", "~/.anki/google_credential.json", "google credential file")
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	rootCmd.PersistentFlags().StringVarP(&credentialFilePath, "file", "f", path.Join(home, ".anki", "google_credential.json"), "google credential file")
 	// rootCmd.MarkPersistentFlagRequired("file")
 
 	rootCmd.AddCommand(langCmd)

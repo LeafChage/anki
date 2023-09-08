@@ -6,26 +6,30 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"time"
 
 	"google.golang.org/api/texttospeech/v1"
 )
 
-type synthesizeOptions interface {
+type SynthesizeOptions interface {
 	Apply(*texttospeech.SynthesizeSpeechRequest) bool
 }
 
-type synthesisInputText string
-type voiceSelectionParamsLanguageCode string
+type synthesisText string
+type synthesisLanguageCode string
+type synthesisVoiceName string
 
-func SynthesisText(v string) synthesisInputText { return synthesisInputText(v) }
-func SynthesisLanguageCode(v string) voiceSelectionParamsLanguageCode {
-	return voiceSelectionParamsLanguageCode(v)
-}
+func SynthesisText(v string) synthesisText                 { return synthesisText(v) }
+func SynthesisLanguageCode(v string) synthesisLanguageCode { return synthesisLanguageCode(v) }
+func SynthesisVoiceName(v string) synthesisVoiceName       { return synthesisVoiceName(v) }
 
-var _ synthesizeOptions = synthesisInputText("")
-var _ synthesizeOptions = voiceSelectionParamsLanguageCode("")
+var _ SynthesizeOptions = synthesisText("")
+var _ SynthesizeOptions = synthesisLanguageCode("")
+var _ SynthesizeOptions = SSMGender("")
+var _ SynthesizeOptions = synthesisVoiceName("")
 
-func (self synthesisInputText) Apply(t *texttospeech.SynthesizeSpeechRequest) bool {
+func (self synthesisText) Apply(t *texttospeech.SynthesizeSpeechRequest) bool {
 	if t.Input == nil {
 		t.Input = &texttospeech.SynthesisInput{}
 	}
@@ -33,7 +37,7 @@ func (self synthesisInputText) Apply(t *texttospeech.SynthesizeSpeechRequest) bo
 	return true
 }
 
-func (self voiceSelectionParamsLanguageCode) Apply(t *texttospeech.SynthesizeSpeechRequest) bool {
+func (self synthesisLanguageCode) Apply(t *texttospeech.SynthesizeSpeechRequest) bool {
 	if t.Voice == nil {
 		t.Voice = &texttospeech.VoiceSelectionParams{}
 	}
@@ -41,9 +45,25 @@ func (self voiceSelectionParamsLanguageCode) Apply(t *texttospeech.SynthesizeSpe
 	return true
 }
 
+func (self SSMGender) Apply(t *texttospeech.SynthesizeSpeechRequest) bool {
+	if t.Voice == nil {
+		t.Voice = &texttospeech.VoiceSelectionParams{}
+	}
+	t.Voice.SsmlGender = string(self)
+	return true
+}
+
+func (self synthesisVoiceName) Apply(t *texttospeech.SynthesizeSpeechRequest) bool {
+	if t.Voice == nil {
+		t.Voice = &texttospeech.VoiceSelectionParams{}
+	}
+	t.Voice.Name = string(self)
+	return true
+}
+
 func (self googleTTS) Synthesize(
 	ctx context.Context,
-	options ...synthesizeOptions,
+	options ...SynthesizeOptions,
 ) error {
 	opt := &texttospeech.SynthesizeSpeechRequest{
 		AudioConfig: &texttospeech.AudioConfig{
@@ -65,11 +85,12 @@ func (self googleTTS) Synthesize(
 	}
 
 	path := fmt.Sprintf(
-		"./%s_%s.mp3",
+		"./%s_%s_%s.mp3",
 		opt.Voice.LanguageCode,
 		xstring.ExcludeWhiteSpaces(opt.Input.Text),
+		time.Now().Format("060102_150405"),
 	)
-	err = ioutil.WriteFile(path, data, 777)
+	err = ioutil.WriteFile(path, data, os.ModePerm)
 	if err != nil {
 		return err
 	}
