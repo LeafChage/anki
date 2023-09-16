@@ -39,7 +39,7 @@ var (
 )
 
 func init() {
-	speakCmd.Flags().StringVar(&speakCmdOpt.languageCode, "lang", "", "speaker speaks in this language")
+	speakCmd.Flags().StringVar(&speakCmdOpt.languageCode, "lang", "Required", "speaker speaks in this language")
 	speakCmd.Flags().StringVar(&speakCmdOpt.gender, "gender", "NULL", "speaker is this gender")
 	speakCmd.Flags().StringVar(&speakCmdOpt.voice, "voice", "NULL", "speaker is this")
 	speakCmd.MarkFlagRequired("lang")

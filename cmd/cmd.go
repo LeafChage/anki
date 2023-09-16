@@ -21,11 +21,11 @@ func Execute() error {
 		return err
 	}
 	rootCmd.PersistentFlags().StringVarP(&credentialFilePath, "file", "f", path.Join(home, ".anki", "google_credential.json"), "google credential file")
-	// rootCmd.MarkPersistentFlagRequired("file")
 
 	rootCmd.AddCommand(langCmd)
 	rootCmd.AddCommand(voiceCmd)
 	rootCmd.AddCommand(speakCmd)
+	rootCmd.AddCommand(translateCmd)
 
 	return rootCmd.Execute()
 }
